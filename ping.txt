@@ -1,0 +1,11 @@
+
+Pinging www.autohotkey.com [104.25.120.16] with 32 bytes of data:
+Reply from 104.25.120.16: bytes=32 time=18ms TTL=55
+Reply from 104.25.120.16: bytes=32 time=18ms TTL=55
+Reply from 104.25.120.16: bytes=32 time=18ms TTL=55
+Reply from 104.25.120.16: bytes=32 time=18ms TTL=55
+
+Ping statistics for 104.25.120.16:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 18ms, Maximum = 18ms, Average = 18ms

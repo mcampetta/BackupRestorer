@@ -61,7 +61,9 @@ StringReplace, 1folders,1folders, `n,, All
 
 FileGetTime, BackupDate , %A_WorkingDir%\%1folders%\Manifest.plist, M
 FormatTime, BackupDate,, LongDate
+GuiControl, -Redraw, backupdatefield
 guicontrol,, backupdatefield, %Backupdate%
+GuiControl, +Redraw, backupdatefield
 SetTimer, checkstatus, 250
 
 
@@ -71,8 +73,12 @@ Runwait, %comspec% /c idevicebackup2.exe info "%A_WorkingDir%" >> status.txt, %A
 fileread, phonestatus, %A_AppData%\BackupRestorer\status.txt
 IfInString, phonestatus, No device found, is it plugged in?
 {
+GuiControl, -Redraw, F1
 guicontrol,, F1, Please connect an iOS Device to continue...
+GuiControl, +Redraw, F1
+GuiControl, -Redraw, DeviceNameField
 guicontrol,, DeviceNameField, No iOS Device Connected..
+GuiControl, +Redraw, DeviceNameField
 guicontrol, disable, Next
 ;GuiControl, -Redraw, DeviceConnect
 Guicontrol,, DeviceConnect, %pic1%
@@ -169,10 +175,12 @@ guicontrol,, F1, Please Wait! Transferring data to device...
 ;StdOutStream( "ping google.com", "StdOutStream_Callback" )
 ;MsgBox % A_WorkingDir
 directoryrunfrom := A_WorkingDir
+directoryrunfrom = "%directoryrunfrom%"
 SetWorkingDir, %A_AppData%\BackupRestorer
 ;MsgBox % A_WorkingDir
+;Clipboard := "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
 ;MsgBox % "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
-StdOutStream( "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom " ", "StdOutStream_Callback" )
+StdOutStream( "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom, "StdOutStream_Callback" )
 SetWorkingDir, directoryrunfrom
 GuiControl, disable, Next
 guicontrol, hide, next
@@ -190,13 +198,13 @@ return
 finish:
 Process, close, idevicebackup2.exe
 Process, close, ideviceinfo.exe
-filedelete, idevicebackup2.exe
+;filedelete, idevicebackup2.exe
 ExitApp
 
 Guiclose:
 Process, close, idevicebackup2.exe
 Process, close, ideviceinfo.exe
-filedelete, idevicebackup2.exe
+;filedelete, idevicebackup2.exe
 exitapp
 
 
@@ -294,7 +302,7 @@ StdOutStream_Callback( data, n ) {
 
   if ! ( n ) {
 	D := ""
-	guicontrol,, stdoutfield, Device Transfer Complete!`n`nIf all went well device should reboot shorty..
+	;guicontrol,, stdoutfield, Device Transfer Complete!`n`nIf all went well device should reboot shorty..
     Return "Data transfer is complete!`n`nIf all went well device should reboot..."
   }
 }

@@ -11,6 +11,7 @@ Just place the binary file alongside the iOS device backup folder.
 Example:
 
 -f49dfa157f0e6b2f0627bb5a8b2e10711b73af7f
+
 -BackupRestorer.exe
 
 An run the BackupRestorer.exe application. 

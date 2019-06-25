@@ -36,15 +36,20 @@ Gui, Font, s17, Arial
 Gui, Add, Text, % dpi ("x10 y10 w773 h30 +Center +BackgroundTrans vF1"), Please connect an iOS Device to continue..
 Gui, add, picture, % dpi ("x10 y40 h-1 vDeviceConnect"), %A_AppData%\BackupRestorer\deviceconnect2.png
 
-gui, add, button, % dpi ("x650 y470 w100 h40 vNext gNext"), Next
-gui, add, button, % dpi ("x650 y470 w100 h40 vFinish gFinish"), Finish
+gui, add, button, % dpi ("x658 y490 w100 h30 vNext gNext"), Next
+gui, add, button, % dpi ("x658 y490 w100 h30 vFinish gFinish"), Next..
 GuiControl, disable, Next
 GuiControl, disable, Finish
 Guicontrol, hide, finish
 Gui, Font, s10, Arial
-gui, add, text, % dpi ("x140 y55 w200 h30 +Center +BackgroundTrans vbackupdatefield"), 
-gui, add, text, % dpi ("x440 y55 w300 h30 +Center +BackgroundTrans vDeviceNameField"), 
-gui, add, text, % dpi ("x40 y465 w600 h70 +BackgroundTrans vstdoutfield"), 
+gui, add, text, % dpi ("x150 y55 w250 h30 +BackgroundTrans vbackupdatefield"), 
+gui, add, text, % dpi ("x410 y55 w350 h30 +Center +BackgroundTrans vDeviceNameField"),
+Gui, Font, s8, Arial
+gui, add, text, % dpi ("x40 y465 w600 h15 +BackgroundTrans vstdoutfield"), 
+guicontrol,, vstdoutfield2, hide
+gui, add, Progress, % dpi ("x38 y490 w600 h30 vMyProgress"), 
+Gui, Font, s10, Arial
+;guicontrol,, MyProgress, 50, test
 Gui, Show, x773 y561, Backup Restorer
 ;MsgBox,,, %1folders%
 	
@@ -59,18 +64,46 @@ StringReplace, 1folders,1folders, `r,, All
 StringReplace, 1folders,1folders, `n,, All
 ;MsgBox,,, %A_WorkingDir%\%1folders%\Manifest.plist
 
-FileGetTime, BackupDate , %A_WorkingDir%\%1folders%\Manifest.plist, M
-FormatTime, BackupDate,, LongDate
+;Get's the name of the Device in the info.plist
+manifest := A_WorkingDir "\" . 1folders "\info.plist" 
+;MsgBox % manifest
+fileread, manifestvar, *P65001 %manifest%
+;MsgBox % manifestvar
+loop parse, manifestvar, `n
+{
+	if (nexthit == "true")
+	{
+		BackupDeviceName := A_LoopField
+		sanatizedBackupDeviceName:=RegExReplace(BackupDeviceName, ".*(<string>)(.*)(</string>).*", "$2")
+		;MsgBox % sanatizedBackupDeviceName
+		;MsgBox % BackupDeviceName 
+	}
+	ifinstring, A_loopfield, <key>Device Name</key>
+	{
+	;	MsgBox,,, hit found!
+	nexthit := "true"
+	}
+	else
+	{
+	nexthit := "false"
+	}
+}
+
+;Get's the timestamp of info.plist in the backupdirectory.
+FileGetTime, BackupDate, %manifest%, M
+FormatTime, BackupDate, %BackupDate%, M/d/yyyy h:mmtt
+
+
 GuiControl, -Redraw, backupdatefield
-guicontrol,, backupdatefield, %Backupdate%
+guicontrol,, backupdatefield, %sanatizedBackupDeviceName%: %Backupdate%
 GuiControl, +Redraw, backupdatefield
 SetTimer, checkstatus, 250
-
+;SetTimer, progressbar, 250
 
 checkstatus:
 filedelete, %A_AppData%\BackupRestorer\status.txt
 Runwait, %comspec% /c idevicebackup2.exe info "%A_WorkingDir%" >> status.txt, %A_AppData%\BackupRestorer , hide
-fileread, phonestatus, %A_AppData%\BackupRestorer\status.txt
+fileread, phonestatus, *P65001 %A_AppData%\BackupRestorer\status.txt
 IfInString, phonestatus, No device found, is it plugged in?
 {
 GuiControl, -Redraw, F1
@@ -94,7 +127,7 @@ guicontrol,, DeviceConnect, %pic2%
 FileDelete, %A_AppData%\BackupRestorer\deviceinfo.txt
 FileDelete, %A_AppData%\BackupRestorer\lockdown.txt
 Runwait, %comspec% /c ideviceinfo.exe -s >> deviceinfo.txt, %A_AppData%\BackupRestorer , hide
-fileread, DeviceName, %A_AppData%\BackupRestorer\deviceinfo.txt
+fileread, DeviceName, *P65001 %A_AppData%\BackupRestorer\deviceinfo.txt
 loop, parse, DeviceName, `n
 {
 	IfInString, A_LoopField, DeviceName
@@ -105,7 +138,7 @@ loop, parse, DeviceName, `n
 DeviceNameText := currentDeviceName . " " . truststate
 guicontrol,, DeviceNameField, %DeviceNameText% 
 Runwait, %comspec% /c ideviceinfo.exe 2> lockdown.txt, %A_AppData%\BackupRestorer , Hide
-fileread, lockdown, %A_AppData%\BackupRestorer\lockdown.txt
+fileread, lockdown, *P65001 %A_AppData%\BackupRestorer\lockdown.txt
 	StringReplace, lockdown,lockdown, `r,, All
 	StringReplace, lockdown,lockdown, `n,, All
 	StringReplace, lockdown,lockdown, %A_Space%,, All
@@ -139,7 +172,7 @@ IfMsgBox No
 filedelete, %A_AppData%\BackupRestorer\oldUDID.txt
 filedelete, %A_AppData%\BackupRestorer\findmyiphone.txt
 FileAppend, %1folders%, %A_AppData%\BackupRestorer\oldUDID.txt
-fileread, DeviceUDID, %A_AppData%\BackupRestorer\deviceinfo.txt
+fileread, DeviceUDID, *P65001 %A_AppData%\BackupRestorer\deviceinfo.txt
 loop, parse, DeviceUDID, `n
 {
 	IfInString, A_LoopField, UniqueDeviceID
@@ -156,7 +189,7 @@ loop, parse, currentDeviceUDID, :
 }
 ;checks for the presence of FinyMyIphone on the device. 
 Runwait, %comspec% /c ideviceinfo -q com.apple.fmip -k IsAssociated >> findmyiphone.txt, %A_AppData%\BackupRestorer , Hide
-fileread, findmyiphone, %A_AppData%\BackupRestorer\findmyiphone.txt
+fileread, findmyiphone, *P65001 %A_AppData%\BackupRestorer\findmyiphone.txt
 	StringReplace, findmyiphone,findmyiphone, `r,, All
 	StringReplace, findmyiphone,findmyiphone, `n,, All
 	StringReplace, findmyiphone,findmyiphone, %A_Space%,, All
@@ -172,20 +205,23 @@ if (findmyiphone == "true")
 ;FileMoveDir, %A_WorkingDir%\%1folders%, %A_WorkingDir%\%2currentDeviceUDID%, R
 ;StdOutStream( "ping google.com" , "StdOutStream_Callback" ) 
 guicontrol,, F1, Please Wait! Transferring data to device...
-;StdOutStream( "ping google.com", "StdOutStream_Callback" )
+
 ;MsgBox % A_WorkingDir
 directoryrunfrom := A_WorkingDir
 directoryrunfrom = "%directoryrunfrom%"
 SetWorkingDir, %A_AppData%\BackupRestorer
 ;MsgBox % A_WorkingDir
-;Clipboard := "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
-;MsgBox % "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
-StdOutStream( "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom, "StdOutStream_Callback" )
-SetWorkingDir, directoryrunfrom
 GuiControl, disable, Next
 guicontrol, hide, next
-guicontrol, enable, finish
 guicontrol, show, finish
+;Clipboard := "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
+;MsgBox % "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom 
+;StdOutStream( "ping -n 3 www.google.com", "StdOutStream_Callback" )
+StdOutStream( "idevicebackup2.exe --source " . 1folders " restore --system --settings --reboot " . directoryrunfrom, "StdOutStream_Callback" )
+;StdOutStream( "idevicebackup2.exe --source " . 1folders " restore " . directoryrunfrom, "StdOutStream_Callback" )
+SetWorkingDir, directoryrunfrom
+guicontrol, enable, finish
+
 
 ;Runwait, %comspec% /c idevicebackup2.exe --source %1folders% restore --system --settings --reboot "%A_WorkingDir%" && Exit, %A_AppData%\BackupRestorer , Show
 
@@ -194,6 +230,33 @@ guicontrol, show, finish
 
 ;MsgBox,,, This is yet to be coded!
 return
+
+/*
+progressbar:
+guicontrolget, cmdtext,, stdoutfield2
+;IfInString, cmdtext, reply
+;{
+;	MsgBox,,, %cmdtext%
+;}
+	loop, parse, stdoutfield2, `n
+	{
+		stdoutlastfield := A_LoopReadLine
+	}
+	If InStr(stdoutlastfield, Finished, false, 0)
+	{
+	targetlineinlogfile := SubStr(stdoutlastfield, 55, 4)	
+	StringReplace, percent, targetlineinlogfile, `%,  , All
+	StringReplace, percent,percent, `r,, All
+	StringReplace, percent,percent, `n,, All
+	StringReplace, percent,percent, %A_Space%,, All
+	FileAppend, targetlineinlogfile: %stdoutlastfield%`n percent: %percent%`n`n, test5.txt
+;	MsgBox % percent
+	GuiControl, -Redraw, MyProgress
+	GuiControl,, MyProgress, %percent% 
+	GuiControl, +Redraw, MyProgress
+	}
+return
+*/
 
 finish:
 Process, close, idevicebackup2.exe
@@ -293,19 +356,61 @@ DPI(in="",setdpi=1)
 ;============ redirects stdout for use in the UI in realtime =================
 
 StdOutStream_Callback( data, n ) {
+  startofstd:
   Static D
   D .= data
-  D := StrTail(5,D)
-  GuiControl, -Redraw, stdoutfield
-  guicontrol,, stdoutfield, %D%
-  GuiControl, +Redraw, stdoutfield
+  D2 := StrTail(4,D)
+  ;MsgBox % D
+  
+	guicontrolget, D3,, stdoutfield
+;	MsgBox % D3
+;	IfInString, D2, Finished
+		if RegExMatch( D3,"([0-9]{1,2}|100)%", percentvar ,1)
+		{
+;		MsgBox % percentvar
+		GuiControl,, MyProgress, %percentvar% 
+		}
+;	{
+;	FileAppend, %D2%, test3.txt
+;	FoundPos := RegExMatch(D2, ([0-9]{1,2}|100)% , targetlineinlogfile, 0
+;	targetlineinlogfile := SubStr(D2, 55, 4)	
+;	StringReplace, percent, targetlineinlogfile, `%,  , All
+;	MsgBox,,, |%percent%|
+;	StringReplace, percent,percent, `r,, All
+;	StringReplace, percent,percent, `n,, All
+;	StringReplace, percent,percent, %A_Space%,, All
+;	RemoveLastLine := RegExReplace(D, "(.*)`n.*", "$1")
+;	FileAppend, %D2%`n%percent%`n`n, test4.txt
+;	GuiControl, -Redraw, MyProgress
+;	GuiControl,, MyProgress, %percent% 
+;	GuiControl, +Redraw, MyProgress
+;	MsgBox,,, %D2%	
+;	}
+  ;Progress, %A_Index%, %A_LoopFileName%, Installing..., Draft Installation
 
+ ; if (percent != "")
+;	{
+;	GuiControl,, MyProgress, %percent% 
+;	}
+
+
+;		gosub, startofstd
+;  settimer, update, 50
+  GuiControl, -Redraw, stdoutfield
+  Guicontrol,, stdoutfield, %D2%
+  GuiControl, +Redraw, stdoutfield
+  
   if ! ( n ) {
 	D := ""
+	guicontrol, hide, MyProgress
+	guicontrol, move, stdoutfield, % dpi ("x38 y465 w400 h60")
+	guicontrol,,Finish, Exit
+	guicontrol, move, Finish, % dpi ("x527 y475 w120 h40")
 	;guicontrol,, stdoutfield, Device Transfer Complete!`n`nIf all went well device should reboot shorty..
     Return "Data transfer is complete!`n`nIf all went well device should reboot..."
   }
 }
+
 
 StdOutStream( sCmd, Callback = "" ) { ; Modified  :  SKAN 31-Aug-2013 http://goo.gl/j8XJXY                             
   Static StrGet := "StrGet"           ; Thanks to :  HotKeyIt         http://goo.gl/IsH1zs                                   

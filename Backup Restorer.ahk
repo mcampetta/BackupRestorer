@@ -136,9 +136,11 @@ fileread, DeviceName, *P65001 %A_AppData%\BackupRestorer\deviceinfo.txt
 loop, parse, DeviceName, `n
 {
 	IfInString, A_LoopField, DeviceName
+	{
 	currentDeviceName := A_LoopField
 	StringReplace, currentDeviceName,currentDeviceName, `r,, All
 	StringReplace, currentDeviceName,currentDeviceName, `n,, All
+	}
 }
 DeviceNameText := currentDeviceName . " " . truststate
 guicontrol,, DeviceNameField, %DeviceNameText% 
@@ -159,10 +161,20 @@ if (lockdown == "ERROR:Couldnotconnecttolockdownd,errorcode-2")
 	}
 }
 else
-{
+	{
 	truststate := "Trusted"
 	guicontrol, enable, Next
-}
+	FileDelete, %A_AppData%\BackupRestorer\deviceinfo2.txt
+	Runwait, %comspec% /c ideviceinfo.exe >> deviceinfo2.txt, %A_AppData%\BackupRestorer , hide
+	FileReadLine, deviceinfoextended, %A_AppData%\BackupRestorer\deviceinfo2.txt, 1
+;	MsgBox % deviceinfoextended
+	IfInString, deviceinfoextended, Unactivated
+	{
+	MsgBox, 48, Unactivated Device Connected, Please activate device before proceeding.`n`nStep device through activation.`n`nEx: Getting Started > Connect To WiFi > Next
+	ExitApp
+	}
+	}
+	
 ;guicontrol, enable, Next
 ;	gosub, checkstatus
 }

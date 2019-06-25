@@ -66,6 +66,11 @@ StringReplace, 1folders,1folders, `n,, All
 
 ;Get's the name of the Device in the info.plist
 manifest := A_WorkingDir "\" . 1folders "\info.plist" 
+IfNotExist, %manifest%
+{
+	MsgBox, 16, iTunes Backup Not Found!, An iTunes backup was not found.`n`nPlease make sure that this program is run in the same folder as an iTunes Backup`n`nExample:`n`n-iTunes Backup`n  --f49dfa157f0e6b2f0627bb5a8b2e10711b73af7f`n  --BackupRestorer.exe
+	ExitApp
+}
 ;MsgBox % manifest
 fileread, manifestvar, *P65001 %manifest%
 ;MsgBox % manifestvar
